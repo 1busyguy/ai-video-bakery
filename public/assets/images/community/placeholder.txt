@@ -1,0 +1,13 @@
+This directory should contain the following community showcase images:
+
+1. grandma.jpg - Animated elderly woman with glasses holding cookies
+2. hair-commercial.jpg - Woman with long dark hair holding a hair product
+3. skydiver.jpg - Male skydiver with goggles and helmet mid-jump
+4. rooftop.jpg - Person in yellow jacket looking at a city view from a rooftop
+5. cat.jpg - Close-up of a cat's face
+
+These images are displayed in the Community Spotlight section of the homepage.
+For the component to display correctly, please add these images to this directory
+or update the image paths in CommunitySpotlight.tsx.
+
+The showcase is designed to demonstrate diverse AI-generated content created by the community. 
