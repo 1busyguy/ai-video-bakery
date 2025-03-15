@@ -1,11 +1,25 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
-export default function CheckoutPage() {
+// Loading component to use in Suspense
+function CheckoutLoading() {
+  return (
+    <div className="bg-background min-h-screen">
+      <div className="container py-16 px-4 md:px-6 max-w-3xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Client component that uses useSearchParams
+function CheckoutContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -26,15 +40,7 @@ export default function CheckoutPage() {
   
   // Show loading state while checking session
   if (status === 'loading' || status === 'unauthenticated' || isLoading) {
-    return (
-      <div className="bg-background min-h-screen">
-        <div className="container py-16 px-4 md:px-6 max-w-3xl mx-auto">
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </div>
-    );
+    return <CheckoutLoading />;
   }
   
   return (
@@ -65,5 +71,14 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutLoading />}>
+      <CheckoutContent />
+    </Suspense>
   );
 } 

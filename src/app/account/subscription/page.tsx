@@ -1,10 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function SubscriptionPage() {
+// Loading component to use in Suspense
+function SubscriptionLoading() {
+  return (
+    <div className="bg-background min-h-screen">
+      <div className="container py-16 px-4 md:px-6 max-w-3xl mx-auto">
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Client component that uses useSearchParams
+function SubscriptionContent() {
   const searchParams = useSearchParams();
   const success = searchParams?.get('success') === 'true';
   const plan = searchParams?.get('plan') || 'Basic';
@@ -126,5 +140,14 @@ export default function SubscriptionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={<SubscriptionLoading />}>
+      <SubscriptionContent />
+    </Suspense>
   );
 } 

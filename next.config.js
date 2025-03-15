@@ -33,6 +33,13 @@ const nextConfig = {
     // your project has TypeScript errors.
     ignoreBuildErrors: true,
   },
+  // Disable server-side rendering for pages with useSearchParams
+  experimental: {
+    // This is the recommended approach for Next.js 14+
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
 };
 
 module.exports = nextConfig; 
