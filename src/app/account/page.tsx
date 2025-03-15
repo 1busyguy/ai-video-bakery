@@ -1,25 +1,36 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import SubscriptionStatus from '@/components/account/SubscriptionStatus';
 import CreditBalance from '@/components/account/CreditBalance';
 import Link from 'next/link';
 
 export default function AccountPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status: nextAuthStatus } = useSession();
+  const { user: authUser, isLoading: authIsLoading } = useAuth();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Handle authentication with useEffect
+  // Combined auth state from both auth systems
+  const isAuthenticated = !!session?.user || !!authUser;
+  const isAuthLoading = nextAuthStatus === 'loading' || authIsLoading;
+  
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/api/auth/signin?callbackUrl=/account');
+    // Wait for both auth systems to initialize
+    if (!isAuthLoading) {
+      if (!isAuthenticated) {
+        router.push('/auth/login?callbackUrl=/account');
+      } else {
+        setIsLoading(false);
+      }
     }
-  }, [status, router]);
+  }, [isAuthLoading, isAuthenticated, router]);
 
   // Show loading state while checking session
-  if (status === 'loading' || status === 'unauthenticated') {
+  if (isLoading || isAuthLoading) {
     return (
       <div className="bg-background min-h-screen">
         <div className="container py-16 px-4 md:px-6 max-w-4xl mx-auto">
@@ -30,6 +41,11 @@ export default function AccountPage() {
       </div>
     );
   }
+
+  // Get user info from either auth system
+  const user = session?.user || authUser;
+  const userName = user?.name || 'Not set';
+  const userEmail = user?.email || 'Not set';
 
   return (
     <div className="bg-background min-h-screen">
@@ -43,9 +59,12 @@ export default function AccountPage() {
               <button className="w-full text-left px-3 py-2 bg-secondary/50 rounded-md font-medium">
                 Account
               </button>
-              <button className="w-full text-left px-3 py-2 hover:bg-secondary/50 rounded-md text-muted-foreground hover:text-foreground transition-colors">
+              <Link 
+                href="/pricing"
+                className="w-full text-left px-3 py-2 block hover:bg-secondary/50 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Billing
-              </button>
+              </Link>
               <button className="w-full text-left px-3 py-2 hover:bg-secondary/50 rounded-md text-muted-foreground hover:text-foreground transition-colors">
                 API
               </button>
@@ -68,7 +87,7 @@ export default function AccountPage() {
                       Name
                     </label>
                     <div className="p-2 border border-border rounded-md bg-secondary/20">
-                      {session?.user?.name || 'Not set'}
+                      {userName}
                     </div>
                   </div>
                   
@@ -77,7 +96,7 @@ export default function AccountPage() {
                       Email
                     </label>
                     <div className="p-2 border border-border rounded-md bg-secondary/20">
-                      {session?.user?.email}
+                      {userEmail}
                     </div>
                   </div>
                 </div>

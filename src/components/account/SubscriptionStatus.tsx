@@ -3,21 +3,33 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export default function SubscriptionStatus() {
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
+    // Wait for session to be checked before fetching
+    if (sessionStatus === 'loading') return;
+    
     const fetchSubscription = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+        
         const response = await fetch('/api/subscriptions/user');
         
         if (!response.ok) {
+          if (response.status === 401) {
+            // Handle unauthorized gracefully
+            setSubscription(null);
+            return;
+          }
           throw new Error('Failed to fetch subscription status');
         }
         
@@ -37,11 +49,12 @@ export default function SubscriptionStatus() {
     };
     
     fetchSubscription();
-  }, []);
+  }, [sessionStatus]);
 
   const handleCancelSubscription = async () => {
     try {
       setIsLoading(true);
+      setError(null);
       
       const response = await fetch('/api/subscriptions/cancel', {
         method: 'POST',
@@ -54,15 +67,27 @@ export default function SubscriptionStatus() {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to cancel subscription');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to cancel subscription');
       }
       
       // Refresh subscription data
       router.refresh();
       setShowCancelModal(false);
+      
+      // Fetch updated subscription info
+      const updatedResponse = await fetch('/api/subscriptions/user');
+      if (updatedResponse.ok) {
+        const data = await updatedResponse.json();
+        if (data.hasActiveSubscription) {
+          setSubscription(data.subscription);
+        } else {
+          setSubscription(null);
+        }
+      }
     } catch (err) {
       console.error('Error cancelling subscription:', err);
-      setError('Failed to cancel subscription. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to cancel subscription. Please try again.');
     } finally {
       setIsLoading(false);
     }

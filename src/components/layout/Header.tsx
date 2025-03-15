@@ -4,15 +4,19 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Play, Image, History, Settings, LogOut, CreditCard, User, ExternalLink, User2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useSession, signOut } from 'next-auth/react';
 
 interface HeaderProps {
   isDark?: boolean;
 }
 
 export function Header({ isDark = true }: HeaderProps) {
-  const { user, logout } = useAuth();
+  const { user: authUser, logout: authLogout } = useAuth();
+  const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
+  // Use either auth system
+  const user = session?.user || authUser;
   const isLoggedIn = !!user;
   
   const toggleMenu = () => {
@@ -25,7 +29,13 @@ export function Header({ isDark = true }: HeaderProps) {
 
   const handleSignOut = async () => {
     try {
-      await logout();
+      // Try both auth methods
+      if (session) {
+        await signOut({ redirect: false });
+      }
+      if (authUser) {
+        await authLogout();
+      }
       closeMenu();
     } catch (error) {
       console.error('Error signing out:', error);
@@ -77,15 +87,6 @@ export function Header({ isDark = true }: HeaderProps) {
             </div>
             <span className="flex justify-center items-center text-center font-light font-medium">LIBRARY</span>
           </Link>
-          <Link
-            href="/pricing"
-            className="w-24 flex flex-row items-center justify-center text-xs mt-xxxxs mx-sm uppercase indent-1 tracking-wider hover:text-strong transition-colors cursor-pointer gap-1 relative text-medium"
-          >
-            <div className="pb-[2px] flex justify-center opacity-0">
-              <CreditCard className="w-[15px] h-[15px]" />
-            </div>
-            <span className="flex justify-center items-center text-center font-light font-medium">PRICING</span>
-          </Link>
         </div>
 
         {/* Authentication Buttons or User Menu */}
@@ -108,7 +109,7 @@ export function Header({ isDark = true }: HeaderProps) {
                 className="flex items-center gap-2 rounded-full hover:bg-zinc-800 py-1 px-2 focus:outline-none"
               >
                 <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                  {user?.avatarInitials || user?.name?.charAt(0) || 'U'}
+                  {(authUser?.avatarInitials || user?.name?.charAt(0) || 'U')}
                 </div>
                 <span className="sr-only md:not-sr-only md:text-sm font-medium text-white">
                   {user?.name || 'User'}
@@ -127,7 +128,7 @@ export function Header({ isDark = true }: HeaderProps) {
                     <div className="text-zinc-400 text-xs mb-2">Creator</div>
                     <div className="flex items-center mb-3">
                       <div className="text-pink-500 mr-2">
-                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <svg className="h-5 w-5" viewBox="0 0 24 24">
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
@@ -136,14 +137,14 @@ export function Header({ isDark = true }: HeaderProps) {
                     </div>
                     
                     <Link 
-                      href="/account/upgrade"
+                      href="/pricing"
                       className="block text-center py-2 px-4 rounded-md bg-pink-500/20 text-pink-500 font-medium mb-2"
                       onClick={closeMenu}
                     >
                       Upgrade plan
                     </Link>
                     <Link 
-                      href="/account/purchase-credits"
+                      href="/pricing#credit-packs"
                       className="block text-center py-2 px-4 rounded-md bg-white text-zinc-900 font-medium"
                       onClick={closeMenu}
                     >
@@ -153,7 +154,7 @@ export function Header({ isDark = true }: HeaderProps) {
                   
                   <div className="p-1">
                     <Link 
-                      href="/account/billing"
+                      href="/pricing"
                       className="flex items-center justify-between px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 w-full text-left"
                       onClick={closeMenu}
                     >
@@ -163,6 +164,7 @@ export function Header({ isDark = true }: HeaderProps) {
                     <Link
                       href="/account"
                       className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-secondary/80 transition-colors"
+                      onClick={closeMenu}
                     >
                       <User2 className="h-4 w-4" />
                       Profile

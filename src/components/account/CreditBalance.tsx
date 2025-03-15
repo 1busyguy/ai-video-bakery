@@ -3,10 +3,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useAuth } from '@/context/AuthContext';
 
 export default function CreditBalance() {
   const { data: session } = useSession();
-  const credits = session?.user?.credits || 0;
+  const { user: authUser } = useAuth();
+  
+  // Get credits from either auth system
+  const nextAuthCredits = session?.user?.credits || 0;
+  const authContextCredits = authUser?.credits || 0;
+  const credits = nextAuthCredits || authContextCredits;
   
   return (
     <div className="rounded-lg border border-border p-6 mb-6">
@@ -32,7 +38,7 @@ export default function CreditBalance() {
       </div>
       
       <Link 
-        href="/account/purchase-credits" 
+        href="/pricing#credit-packs" 
         className="block w-full text-center bg-primary text-primary-foreground hover:bg-primary/90 py-3 rounded-md font-medium transition-colors"
       >
         Purchase Credits
