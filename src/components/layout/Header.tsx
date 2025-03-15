@@ -77,6 +77,15 @@ export function Header({ isDark = true }: HeaderProps) {
             </div>
             <span className="flex justify-center items-center text-center font-light font-medium">LIBRARY</span>
           </Link>
+          <Link
+            href="/pricing"
+            className="w-24 flex flex-row items-center justify-center text-xs mt-xxxxs mx-sm uppercase indent-1 tracking-wider hover:text-strong transition-colors cursor-pointer gap-1 relative text-medium"
+          >
+            <div className="pb-[2px] flex justify-center opacity-0">
+              <CreditCard className="w-[15px] h-[15px]" />
+            </div>
+            <span className="flex justify-center items-center text-center font-light font-medium">PRICING</span>
+          </Link>
         </div>
 
         {/* Authentication Buttons or User Menu */}
