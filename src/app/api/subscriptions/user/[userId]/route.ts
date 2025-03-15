@@ -1,49 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import dbConnect from '@/lib/mongoose';
+import Subscription from '@/models/Subscription';
+import User from '@/models/User';
+import SubscriptionPlan from '@/models/SubscriptionPlan';
 
 // GET /api/subscriptions/user/[userId]
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { userId: string } }
-) {
+export async function GET(req: NextRequest) {
   try {
-    // Connect to database
-    const { db } = await connectToDatabase();
-
-    // Verify authentication
     const session = await getServerSession(authOptions);
+    
     if (!session || !session.user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
-
-    const { userId } = params;
-
-    // Make sure user can only access their own subscriptions
-    if (session.user.id !== userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    
+    await dbConnect();
+    
+    // Find user's active subscription
+    const subscription = await Subscription.findOne({
+      userId: session.user.id,
+      status: { $in: ['active', 'trialing'] }
+    });
+    
+    if (!subscription) {
+      return NextResponse.json({
+        hasActiveSubscription: false
+      });
     }
-
-    // Find subscriptions by user ID
-    const subscriptions = await db.collection('subscriptions').find({ userId }).toArray();
-
-    // Format response
-    const responseData = subscriptions.map((subscription: any) => ({
+    
+    // Find plan details
+    const plan = await SubscriptionPlan.findOne({ planId: subscription.planId });
+    
+    // If plan is not found in database, use fallback values
+    const subscriptionDetails = {
       id: subscription._id.toString(),
-      userId: subscription.userId.toString(),
-      stripeSubscriptionId: subscription.stripeSubscriptionId,
-      status: subscription.status,
       planId: subscription.planId,
+      status: subscription.status,
       currentPeriodStart: subscription.currentPeriodStart,
       currentPeriodEnd: subscription.currentPeriodEnd,
-    }));
-
-    return NextResponse.json(responseData);
+      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      includedCredits: plan?.includedCredits || 
+        (subscription.planId === 'free' ? 400 :
+         subscription.planId === 'basic' ? 1000 :
+         subscription.planId === 'creator' ? 3600 : 11000)
+    };
+    
+    return NextResponse.json({
+      hasActiveSubscription: true,
+      subscription: subscriptionDetails
+    });
   } catch (error) {
-    console.error('Error fetching user subscriptions:', error);
+    console.error('Error fetching user subscription:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

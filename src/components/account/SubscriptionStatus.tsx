@@ -4,36 +4,18 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-type SubscriptionPlan = {
-  name: string;
-  price: string;
-  features: string[];
-};
-
-type Subscription = {
-  id: string;
-  planId: string;
-  status: string;
-  currentPeriodEnd: string;
-  planDetails: SubscriptionPlan;
-};
-
-type SubscriptionStatusProps = {
-  userId?: string;
-};
-
-export default function SubscriptionStatus({ userId }: SubscriptionStatusProps) {
+export default function SubscriptionStatus() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
 
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/subscriptions/status');
+        const response = await fetch('/api/subscriptions/user');
         
         if (!response.ok) {
           throw new Error('Failed to fetch subscription status');
@@ -138,7 +120,7 @@ export default function SubscriptionStatus({ userId }: SubscriptionStatusProps) 
       <div className="space-y-4">
         <div className="flex justify-between items-center border-b border-border pb-3">
           <span className="text-muted-foreground">Plan</span>
-          <span className="font-medium">{subscription.planDetails.name}</span>
+          <span className="font-medium">{subscription.planId}</span>
         </div>
         
         <div className="flex justify-between items-center border-b border-border pb-3">
@@ -149,36 +131,13 @@ export default function SubscriptionStatus({ userId }: SubscriptionStatusProps) 
         </div>
         
         <div className="flex justify-between items-center border-b border-border pb-3">
-          <span className="text-muted-foreground">Price</span>
-          <span className="font-medium">${subscription.planDetails.price}/month</span>
+          <span className="text-muted-foreground">Monthly Credits</span>
+          <span className="font-medium">{subscription.includedCredits.toLocaleString()}</span>
         </div>
         
         <div className="flex justify-between items-center border-b border-border pb-3">
           <span className="text-muted-foreground">Current period ends</span>
           <span className="font-medium">{currentPeriodEnd}</span>
-        </div>
-        
-        <div className="pt-2">
-          <h3 className="font-medium mb-2">What's included:</h3>
-          <ul className="space-y-2">
-            {subscription.planDetails.features.map((feature, index) => (
-              <li key={index} className="flex items-start">
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="h-5 w-5 text-primary mr-2 shrink-0 mt-0.5" 
-                  viewBox="0 0 20 20" 
-                  fill="currentColor"
-                >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                    clipRule="evenodd" 
-                  />
-                </svg>
-                <span className="text-sm">{feature}</span>
-              </li>
-            ))}
-          </ul>
         </div>
       </div>
       

@@ -1,100 +1,103 @@
-import React from 'react';
-import Link from 'next/link';
+'use client';
 
-const pricingPlans = [
+import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useSession } from 'next-auth/react';
+
+const HARDCODED_PLANS = [
   {
-    id: 'free',
+    planId: 'free',
     name: 'Free',
     price: '0',
+    interval: 'monthly',
+    includedCredits: 400,
     features: [
-      '5 videos per day',
+      'Includes 400 credits per month',
       'Slower generations',
-      '2 concurrent generations',
-      'Video length up to 30 seconds',
+      'Cannot purchase credit packs',
       'No commercial use'
     ],
-    cta: 'Sign up now',
-    href: '/auth/signup',
-    highlighted: false
+    popular: false
   },
   {
-    id: 'basic',
+    planId: 'basic',
     name: 'Basic',
     price: '10',
+    interval: 'monthly',
+    includedCredits: 1000,
     features: [
-      '20 minutes of video/month',
-      '4 parallel generations',
-      'Video length up to 1 minute',
-      'Commercial use',
-      'Premium image models',
-      'No watermark',
+      'Includes 1,000 credits per month',
+      'Credits do not rollover',
       'Premium voices',
       'Voice cloning',
-      'Text-to-speech preview',
-      'Additional video: $0.50/minute'
+      'Commercial use',
+      'No watermark',
+      'Purchase additional credit packs that rollover'
     ],
-    cta: 'Get started',
-    href: '/checkout?plan=basic',
-    highlighted: false
+    popular: false
   },
   {
-    id: 'creator',
+    planId: 'creator',
     name: 'Creator',
-    price: '25',
+    price: '30',
+    interval: 'monthly',
+    includedCredits: 3600,
     features: [
-      '1 hour of video/month',
-      '6 parallel generations',
-      'Video length up to 2 minutes',
-      'Commercial use',
-      'Premium image models',
-      'No watermark',
+      'Includes 3,600 credits per month',
+      'Credits do not rollover',
       'Premium voices',
       'Voice cloning',
-      'Text-to-speech preview',
-      'Additional video: $0.50/minute'
+      'Commercial use',
+      'No watermark',
+      'Purchase additional credit packs that rollover'
     ],
-    cta: 'Get started',
-    href: '/checkout?plan=creator',
-    highlighted: true,
-    labelText: 'Most popular'
+    popular: true
   },
   {
-    id: 'professional',
+    planId: 'professional',
     name: 'Professional',
-    price: '50',
+    price: '75',
+    interval: 'monthly',
+    includedCredits: 11000,
     features: [
-      '2 hours of video/month',
-      '8 parallel generations',
-      'Video length up to 12 minutes',
-      'Commercial use',
-      'Premium image models',
-      'No watermark',
+      'Includes 11,000 credits per month',
+      'Credits do not rollover',
       'Premium voices',
       'Voice cloning',
-      'Text-to-speech preview',
-      'Additional video: $0.50/minute'
+      'Commercial use',
+      'No watermark',
+      'Purchase additional credit packs that rollover'
     ],
-    cta: 'Get started',
-    href: '/checkout?plan=professional',
-    highlighted: false
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 'Custom',
-    features: [
-      'Customize to your business with enterprise-level AI generations',
-      'Integrations with best-in-class features',
-      'Live support from dedicated experts'
-    ],
-    cta: 'Contact us',
-    href: '/contact',
-    highlighted: false,
-    labelText: 'Enterprise'
+    popular: false
   }
 ];
 
 export default function PricingPage() {
+  const { data: session, status } = useSession();
+  const [plans, setPlans] = useState(HARDCODED_PLANS);
+  const [activeInterval, setActiveInterval] = useState('monthly');
+  
+  // Fetch plans from the API - fallback to hardcoded if API fails
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const response = await fetch('/api/subscription-plans');
+        if (!response.ok) {
+          throw new Error('Failed to fetch plans');
+        }
+        const data = await response.json();
+        if (data.length > 0) {
+          setPlans(data);
+        }
+      } catch (error) {
+        console.error('Error fetching plans:', error);
+        // Fallback to hardcoded plans
+      }
+    };
+    
+    fetchPlans();
+  }, []);
+  
   return (
     <div className="bg-background min-h-screen">
       <div className="container py-16 px-4 md:px-6">
@@ -102,18 +105,43 @@ export default function PricingPage() {
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Choose the right plan for you
           </h1>
+          
+          <div className="flex justify-center mt-6 mb-10">
+            <div className="inline-flex bg-secondary rounded-full p-1">
+              <button
+                onClick={() => setActiveInterval('monthly')}
+                className={`px-4 py-2 text-sm rounded-full transition-colors ${
+                  activeInterval === 'monthly' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-foreground hover:bg-secondary-foreground/10'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setActiveInterval('yearly')}
+                className={`px-4 py-2 text-sm rounded-full transition-colors ${
+                  activeInterval === 'yearly' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-foreground hover:bg-secondary-foreground/10'
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-          {pricingPlans.map((plan) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {plans.map((plan) => (
             <div 
-              key={plan.id}
+              key={plan.planId}
               className={`rounded-lg border p-6 flex flex-col h-full relative
-              ${plan.highlighted ? 'border-primary shadow-lg' : 'border-border'}`}
+              ${plan.popular ? 'border-primary shadow-lg' : 'border-border'}`}
             >
-              {plan.labelText && (
+              {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full">
-                  {plan.labelText}
+                  Most Popular
                 </div>
               )}
               
@@ -121,9 +149,10 @@ export default function PricingPage() {
                 <h3 className="text-xl font-bold mb-1">{plan.name}</h3>
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold">${plan.price}</span>
-                  {plan.id !== 'enterprise' && plan.id !== 'free' && (
-                    <span className="text-muted-foreground ml-1">/month</span>
-                  )}
+                  <span className="text-muted-foreground ml-1">/month</span>
+                </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {plan.includedCredits.toLocaleString()} credits per month
                 </div>
               </div>
 
@@ -148,16 +177,124 @@ export default function PricingPage() {
               </ul>
 
               <Link 
-                href={plan.href}
+                href={status === 'authenticated' 
+                  ? `/checkout?plan=${plan.planId}` 
+                  : `/auth/login?redirect=/checkout?plan=${plan.planId}`}
                 className={`w-full py-2 px-4 rounded-md font-medium text-center transition-colors 
-                ${plan.highlighted 
+                ${plan.popular 
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
                   : 'bg-secondary text-secondary-foreground hover:bg-secondary/90'}`}
               >
-                {plan.cta}
+                {plan.planId === 'free' ? 'Sign up now' : 'Choose Plan'}
               </Link>
             </div>
           ))}
+        </div>
+        
+        {/* Credit pricing table */}
+        <div className="mt-24">
+          <h2 className="text-3xl font-bold text-center mb-10">Credit Pricing</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Video */}
+            <div className="rounded-lg border border-border p-6">
+              <h3 className="text-xl font-bold mb-4">Video</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2">Action</th>
+                      <th className="text-center py-2">Credits</th>
+                      <th className="text-right py-2">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Character-3 (540p)</td>
+                      <td className="text-center py-2">3.5</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Character-3 (720p)</td>
+                      <td className="text-center py-2">7</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Kling 1.6</td>
+                      <td className="text-center py-2">16</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Image */}
+            <div className="rounded-lg border border-border p-6">
+              <h3 className="text-xl font-bold mb-4">Image</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2">Action</th>
+                      <th className="text-center py-2">Credits</th>
+                      <th className="text-right py-2">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Character-3 (540p)</td>
+                      <td className="text-center py-2">3.5</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Character-3 (720p)</td>
+                      <td className="text-center py-2">7</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Kling 1.6</td>
+                      <td className="text-center py-2">16</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Text */}
+            <div className="rounded-lg border border-border p-6">
+              <h3 className="text-xl font-bold mb-4">Text</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2">Action</th>
+                      <th className="text-center py-2">Credits</th>
+                      <th className="text-right py-2">Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Character-3 (540p)</td>
+                      <td className="text-center py-2">3.5</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Character-3 (720p)</td>
+                      <td className="text-center py-2">7</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                    <tr className="border-b border-border">
+                      <td className="py-2">Kling 1.6</td>
+                      <td className="text-center py-2">16</td>
+                      <td className="text-right py-2">per second</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

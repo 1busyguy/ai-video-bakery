@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
-import { connectToDatabase } from '@/lib/mongodb';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
+import dbConnect from '@/lib/mongoose';
+import Subscription from '@/models/Subscription';
+import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2025-02-24.acacia',
 });
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -19,8 +20,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const body = await request.json();
-    const { subscriptionId } = body;
+    const { subscriptionId } = await req.json();
     
     if (!subscriptionId) {
       return NextResponse.json(
@@ -29,12 +29,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { db } = await connectToDatabase();
+    await dbConnect();
     
-    // Get the subscription from the database
-    const subscription = await db.collection('subscriptions').findOne({
-      _id: subscriptionId
-    });
+    // Find the subscription
+    const subscription = await Subscription.findById(subscriptionId);
     
     if (!subscription) {
       return NextResponse.json(
@@ -43,35 +41,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Make sure the user owns this subscription
-    const user = await db.collection('users').findOne({ email: session.user.email });
-    
-    if (!user || user._id.toString() !== subscription.userId.toString()) {
+    // Ensure user owns subscription
+    if (subscription.userId.toString() !== session.user.id) {
       return NextResponse.json(
         { error: 'Unauthorized to cancel this subscription' },
         { status: 403 }
       );
     }
     
-    // Cancel the subscription in Stripe
+    // Cancel at period end in Stripe
     await stripe.subscriptions.update(subscription.stripeSubscriptionId, {
-      cancel_at_period_end: true
+      cancel_at_period_end: true,
     });
     
-    // Update the subscription in the database
-    await db.collection('subscriptions').updateOne(
-      { _id: subscriptionId },
-      {
-        $set: {
-          cancelAtPeriodEnd: true,
-          updatedAt: new Date()
-        }
-      }
-    );
+    // Update subscription in database
+    subscription.cancelAtPeriodEnd = true;
+    await subscription.save();
     
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      message: 'Subscription will be canceled at the end of the current billing period'
+      message: 'Subscription will be canceled at the end of the billing period',
     });
   } catch (error) {
     console.error('Error cancelling subscription:', error);

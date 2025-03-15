@@ -87,7 +87,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.credits = user.credits;
+        token.credits = user.credits ?? 0; // Provide default value of 0 if credits is undefined
       }
       
       // Keep token info up to date

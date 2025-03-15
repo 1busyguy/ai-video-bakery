@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import SubscriptionStatus from '@/components/account/SubscriptionStatus';
 import CreditBalance from '@/components/account/CreditBalance';
+import Link from 'next/link';
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -80,23 +81,11 @@ export default function AccountPage() {
               </div>
             </div>
             
-            {/* Subscription Section */}
-            <SubscriptionStatus userId={session?.user?.id} />
-            
-            {/* API Keys Section */}
-            <div className="rounded-lg border border-border p-6">
-              <h2 className="text-xl font-bold mb-4">API Keys</h2>
-              
-              <p className="text-muted-foreground mb-6">
-                Generate API keys to access our services programmatically.
-              </p>
-              
-              <button className="bg-secondary text-secondary-foreground hover:bg-secondary/90 py-2 px-4 rounded-md font-medium transition-colors">
-                Generate API Key
-              </button>
-            </div>
-            
+            {/* Credit Balance Section */}
             <CreditBalance />
+            
+            {/* Subscription Section */}
+            <SubscriptionStatus />
           </div>
         </div>
       </div>
