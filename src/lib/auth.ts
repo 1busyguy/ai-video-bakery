@@ -4,9 +4,15 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcrypt';
 import { connectToDatabase } from './mongodb';
 import clientPromise from './mongodb-client';
+import User from '@/models/User';
+import dbConnect from './mongoose';
 
 // Extend NextAuth types to include custom properties
 declare module 'next-auth' {
+  interface User {
+    credits?: number;
+  }
+  
   interface Session {
     user: {
       id: string;
@@ -19,6 +25,7 @@ declare module 'next-auth' {
         status: string;
         currentPeriodEnd: Date;
       } | null;
+      credits: number;
     };
   }
 }
@@ -32,6 +39,7 @@ declare module 'next-auth/jwt' {
       status: string;
       currentPeriodEnd: Date;
     } | null;
+    credits: number;
   }
 }
 
@@ -49,14 +57,14 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password required');
         }
 
-        const { db } = await connectToDatabase();
-        const user = await db.collection('users').findOne({ email: credentials.email });
+        await dbConnect();
+        const user = await User.findOne({ email: credentials.email });
 
-        if (!user || !user.password) {
+        if (!user) {
           throw new Error('User not found');
         }
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
+        const isValid = await user.comparePassword(credentials.password);
 
         if (!isValid) {
           throw new Error('Invalid password');
@@ -66,7 +74,8 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          image: user.image
+          image: user.image,
+          credits: user.credits
         };
       }
     })
@@ -76,37 +85,26 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Add user info to JWT token
       if (user) {
         token.id = user.id;
-        // Add other user data as needed
+        token.credits = user.credits;
       }
       
-      // Add subscription info to JWT token
+      // Keep token info up to date
       if (token.id) {
-        const { db } = await connectToDatabase();
-        const subscription = await db.collection('subscriptions').findOne({
-          userId: token.id,
-          status: { $in: ['active', 'trialing'] }
-        });
-
-        if (subscription) {
-          token.subscription = {
-            id: subscription._id.toString(),
-            plan: subscription.planId,
-            status: subscription.status,
-            currentPeriodEnd: subscription.currentPeriodEnd,
-          };
+        await dbConnect();
+        const freshUser = await User.findById(token.id).select('credits');
+        if (freshUser) {
+          token.credits = freshUser.credits;
         }
       }
       
       return token;
     },
     async session({ session, token }) {
-      // Add user info to session
       if (token && session.user) {
-        session.user.id = token.id;
-        session.user.subscription = token.subscription;
+        session.user.id = token.id as string;
+        session.user.credits = token.credits as number;
       }
       return session;
     }

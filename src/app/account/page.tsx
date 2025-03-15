@@ -4,6 +4,7 @@ import React from 'react';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import SubscriptionStatus from '@/components/account/SubscriptionStatus';
+import CreditBalance from '@/components/account/CreditBalance';
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
@@ -94,6 +95,8 @@ export default function AccountPage() {
                 Generate API Key
               </button>
             </div>
+            
+            <CreditBalance />
           </div>
         </div>
       </div>
