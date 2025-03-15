@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { SubscriptionModel } from '@/models/Subscription';
-import { auth } from '@clerk/nextjs';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth';
 
 // GET /api/subscriptions/user/[userId]
 export async function GET(
@@ -10,10 +10,10 @@ export async function GET(
 ) {
   try {
     // Connect to database
-    await dbConnect();
+    const { db } = await connectToDatabase();
 
     // Verify authentication
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -26,16 +26,15 @@ export async function GET(
     }
 
     // Find subscriptions by user ID
-    const subscriptions = await Subscription.find({ userId });
+    const subscriptions = await db.collection('subscriptions').find({ userId }).toArray();
 
     // Format response
-    const responseData = subscriptions.map(subscription => ({
+    const responseData = subscriptions.map((subscription: any) => ({
       id: subscription._id.toString(),
       userId: subscription.userId.toString(),
-      subscriptionId: subscription.subscriptionId,
+      stripeSubscriptionId: subscription.stripeSubscriptionId,
       status: subscription.status,
       planId: subscription.planId,
-      isYearlyBilling: subscription.isYearlyBilling,
       currentPeriodStart: subscription.currentPeriodStart,
       currentPeriodEnd: subscription.currentPeriodEnd,
     }));
