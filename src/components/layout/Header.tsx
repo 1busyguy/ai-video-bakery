@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Play, Image, History, Settings, LogOut, CreditCard, User, ExternalLink } from 'lucide-react';
+import { Play, Image, History, Settings, LogOut, CreditCard, User, ExternalLink, User2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
@@ -160,12 +160,12 @@ export function Header({ isDark = true }: HeaderProps) {
                       <span>Billing</span>
                       <ExternalLink size={14} className="text-zinc-500" />
                     </Link>
-                    <Link 
-                      href="/account/profile"
-                      className="flex items-center px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800 w-full text-left"
-                      onClick={closeMenu}
+                    <Link
+                      href="/account"
+                      className="flex items-center gap-2 px-4 py-3 text-sm hover:bg-secondary/80 transition-colors"
                     >
-                      <span>Profile</span>
+                      <User2 className="h-4 w-4" />
+                      Profile
                     </Link>
                   </div>
                   

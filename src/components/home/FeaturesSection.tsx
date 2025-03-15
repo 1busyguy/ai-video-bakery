@@ -100,7 +100,7 @@ export function FeaturesSection({}: FeaturesSectionProps) {
                   muted
                   loop
                   className="w-full h-full object-cover rounded-xl shadow-2xl" 
-                  poster="/assets/images/hero/video.jpg"
+                  poster="/placeholder-video.jpg"
                 >
                   <source src="/assets/videos/landing-video.mp4" type="video/mp4" />
                   Your browser does not support the video tag.

@@ -1,10 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongoose';
 import SubscriptionPlan from '@/models/SubscriptionPlan';
+import { Types } from 'mongoose';
+
+// Define the plan type
+type PlanType = {
+  _id?: string | Types.ObjectId;
+  planId: string;
+  name: string;
+  price: string;
+  interval: string;
+  includedCredits: number;
+  features: string[];
+  popular: boolean;
+  isActive: boolean;
+  stripePriceId: string | null;
+};
 
 // Fallback plans if database is empty
-const FALLBACK_PLANS = [
+const FALLBACK_PLANS: PlanType[] = [
   {
+    _id: new Types.ObjectId().toString(), // Add _id for TypeScript
     planId: 'free',
     name: 'Free',
     price: '0',
@@ -21,6 +37,7 @@ const FALLBACK_PLANS = [
     stripePriceId: null
   },
   {
+    _id: new Types.ObjectId().toString(), // Add _id for TypeScript
     planId: 'basic',
     name: 'Basic',
     price: '10',
@@ -40,6 +57,7 @@ const FALLBACK_PLANS = [
     stripePriceId: 'price_basic'
   },
   {
+    _id: new Types.ObjectId().toString(), // Add _id for TypeScript
     planId: 'creator',
     name: 'Creator',
     price: '30',
@@ -59,6 +77,7 @@ const FALLBACK_PLANS = [
     stripePriceId: 'price_creator'
   },
   {
+    _id: new Types.ObjectId().toString(), // Add _id for TypeScript
     planId: 'professional',
     name: 'Professional',
     price: '75',
@@ -84,14 +103,14 @@ export async function GET(req: NextRequest) {
     await dbConnect();
     
     // Get all active plans from database
-    let plans = await SubscriptionPlan.find({ isActive: true })
+    const dbPlans = await SubscriptionPlan.find({ isActive: true })
       .select('-__v -createdAt -updatedAt')
       .lean();
     
-    // If no plans found, return fallback plans
-    if (plans.length === 0) {
-      plans = FALLBACK_PLANS;
-    }
+    // If no plans found, use fallback plans
+    let plans: PlanType[] = dbPlans.length > 0 
+      ? dbPlans as unknown as PlanType[] 
+      : FALLBACK_PLANS;
     
     // Format plans for frontend
     const formattedPlans = plans.map(plan => ({

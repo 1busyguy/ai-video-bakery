@@ -75,10 +75,13 @@ export function VideoShowcase({}: VideoShowcaseProps) {
           <video 
             ref={videoRef}
             id="video-preview" 
-            className="w-full h-full object-cover rounded-xl"
-            poster="/assets/images/hero/video.jpg"
-            playsInline
+            className="w-full h-full object-cover rounded-lg"
+            controls
+            autoPlay
             muted
+            loop
+            playsInline
+            poster="/placeholder-video.jpg"
             onEnded={() => setIsPlaying(false)}
           >
             <source src="/assets/movies/Video v45.2.mp4" type="video/mp4" />

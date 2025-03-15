@@ -1,22 +1,25 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import SubscriptionStatus from '@/components/account/SubscriptionStatus';
 import CreditBalance from '@/components/account/CreditBalance';
 import Link from 'next/link';
 
 export default function AccountPage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   
-  // Redirect to login if not authenticated
-  if (status === 'unauthenticated') {
-    redirect('/auth/login');
-  }
+  // Handle authentication with useEffect
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/api/auth/signin?callbackUrl=/account');
+    }
+  }, [status, router]);
 
   // Show loading state while checking session
-  if (status === 'loading') {
+  if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="bg-background min-h-screen">
         <div className="container py-16 px-4 md:px-6 max-w-4xl mx-auto">

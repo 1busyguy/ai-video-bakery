@@ -73,9 +73,10 @@ const HARDCODED_PLANS = [
 ];
 
 export default function PricingPage() {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [plans, setPlans] = useState(HARDCODED_PLANS);
   const [activeInterval, setActiveInterval] = useState('monthly');
+  const [isLoading, setIsLoading] = useState(true);
   
   // Fetch plans from the API - fallback to hardcoded if API fails
   useEffect(() => {
@@ -92,11 +93,26 @@ export default function PricingPage() {
       } catch (error) {
         console.error('Error fetching plans:', error);
         // Fallback to hardcoded plans
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchPlans();
   }, []);
+  
+  // Show loading state while checking session
+  if (isLoading) {
+    return (
+      <div className="bg-background min-h-screen">
+        <div className="container py-16 px-4 md:px-6">
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="bg-background min-h-screen">
@@ -179,7 +195,7 @@ export default function PricingPage() {
               <Link 
                 href={status === 'authenticated' 
                   ? `/checkout?plan=${plan.planId}` 
-                  : `/auth/login?redirect=/checkout?plan=${plan.planId}`}
+                  : `/api/auth/signin?callbackUrl=${encodeURIComponent(`/checkout?plan=${plan.planId}`)}`}
                 className={`w-full py-2 px-4 rounded-md font-medium text-center transition-colors 
                 ${plan.popular 
                   ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
@@ -191,9 +207,9 @@ export default function PricingPage() {
           ))}
         </div>
         
-        {/* Credit pricing table */}
-        <div className="mt-24">
-          <h2 className="text-3xl font-bold text-center mb-10">Credit Pricing</h2>
+        {/* Credit Usage Pricing */}
+        <div className="mt-20">
+          <h2 className="text-3xl font-bold text-center mb-12">Credit Usage Pricing</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Video */}
@@ -243,28 +259,23 @@ export default function PricingPage() {
                   </thead>
                   <tbody>
                     <tr className="border-b border-border">
-                      <td className="py-2">Character-3 (540p)</td>
-                      <td className="text-center py-2">3.5</td>
-                      <td className="text-right py-2">per second</td>
+                      <td className="py-2">Generate</td>
+                      <td className="text-center py-2">80</td>
+                      <td className="text-right py-2">per image</td>
                     </tr>
                     <tr className="border-b border-border">
-                      <td className="py-2">Character-3 (720p)</td>
-                      <td className="text-center py-2">7</td>
-                      <td className="text-right py-2">per second</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-2">Kling 1.6</td>
-                      <td className="text-center py-2">16</td>
-                      <td className="text-right py-2">per second</td>
+                      <td className="py-2">Upscale</td>
+                      <td className="text-center py-2">40</td>
+                      <td className="text-right py-2">per image</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             </div>
             
-            {/* Text */}
+            {/* Audio */}
             <div className="rounded-lg border border-border p-6">
-              <h3 className="text-xl font-bold mb-4">Text</h3>
+              <h3 className="text-xl font-bold mb-4">Audio</h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -276,19 +287,14 @@ export default function PricingPage() {
                   </thead>
                   <tbody>
                     <tr className="border-b border-border">
-                      <td className="py-2">Character-3 (540p)</td>
-                      <td className="text-center py-2">3.5</td>
-                      <td className="text-right py-2">per second</td>
+                      <td className="py-2">Text-to-Speech</td>
+                      <td className="text-center py-2">3</td>
+                      <td className="text-right py-2">per minute</td>
                     </tr>
                     <tr className="border-b border-border">
-                      <td className="py-2">Character-3 (720p)</td>
-                      <td className="text-center py-2">7</td>
-                      <td className="text-right py-2">per second</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-2">Kling 1.6</td>
-                      <td className="text-center py-2">16</td>
-                      <td className="text-right py-2">per second</td>
+                      <td className="py-2">Clone Voice</td>
+                      <td className="text-center py-2">150</td>
+                      <td className="text-right py-2">per voice</td>
                     </tr>
                   </tbody>
                 </table>

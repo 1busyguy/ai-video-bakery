@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { redirect, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CreditPurchaseForm from '@/components/credit/CreditPurchaseForm';
@@ -19,14 +19,16 @@ export default function PurchaseCreditsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   
-  // Redirect to login if not authenticated
-  if (status === 'unauthenticated') {
-    redirect('/auth/login');
-  }
+  // Handle authentication with useEffect
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/api/auth/signin?callbackUrl=/account/purchase-credits');
+    }
+  }, [status, router]);
   
   const [selectedPack, setSelectedPack] = useState(CREDIT_PACKS[1]);
   const [clientSecret, setClientSecret] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const handleSelectPack = async (pack: typeof CREDIT_PACKS[0]) => {
@@ -55,7 +57,7 @@ export default function PurchaseCreditsPage() {
   };
   
   // Show loading state while checking session
-  if (status === 'loading') {
+  if (status === 'loading' || status === 'unauthenticated') {
     return (
       <div className="bg-background min-h-screen">
         <div className="container py-16 px-4 md:px-6 max-w-3xl mx-auto">
